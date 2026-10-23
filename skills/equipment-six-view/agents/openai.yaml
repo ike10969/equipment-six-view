@@ -1,0 +1,6 @@
+interface:
+  display_name: "Equipment Six-View Composer"
+  short_description: "Create consistent six-view equipment references"
+  default_prompt: "Use $equipment-six-view to turn these equipment photos into consistent six-view reference images."
+policy:
+  allow_implicit_invocation: true

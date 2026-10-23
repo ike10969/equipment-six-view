@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "equipment-six-view",
+  "version": "1.0.0",
+  "description": "Create consistent equipment six-view reference images with explicit source mapping and user-defined layouts.",
+  "author": {
+    "name": "Equipment Six-View Contributors"
+  },
+  "repository": "https://github.com/ike10969/equipment-six-view",
+  "license": "MIT"
+}
