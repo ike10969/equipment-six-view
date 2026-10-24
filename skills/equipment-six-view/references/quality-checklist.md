@@ -5,9 +5,12 @@ Run both semantic review and script checks before delivery.
 ## Semantic review
 
 - The latest user instruction produced a fresh manifest; no stale mapping or layout was reused after a correction.
+- `beautify_mode` is explicitly selected as `none` or `smart`; it was not inferred from the image.
 - The manifest validates with no duplicate source assignment unless the second view uses `same_as`.
 - Every active view has evidence or explicit inference permission; excluded views are not silently filled.
 - Every active view has `cleanup_status=approved` before composition; no raw photo is used as the final view.
+- In `none` mode, every direct view has `retouch_status=not_requested` and `retouch_method=none`.
+- In `smart` mode, every direct view has `retouch_status=approved` and a valid retouch method.
 - Each refined view has a transparent or clean white background, with no hands, room, floor, stand, cable, or unwanted shadow remaining.
 - Silhouette edges have no halos, white wedges, jagged cutout borders, holes, or transparent fringe.
 - All six faces depict the same device.

@@ -15,11 +15,20 @@
 - 支持自定义组合版式，例如正面图居中、上下左右视图环绕、背面图放在最右侧；
 - 通过 `manifest.json` 固化图像映射、排版、旋转和证据状态；
 - 强制执行抠图精修：去除手、房间、地面和杂物，修复边缘后才能进入组合；
+- 处理前强制询问美化等级：`none`（无美化，仅抠图）或 `smart`（智能美化，清理气泡、倒影、灰尘和拍摄瑕疵）；
+- 智能美化会保留真实结构、接口、按钮、文字和真实损伤，不会擅自重绘产品；
 - 缺失视图默认不会被推断，只有用户明确允许时才启用推断；
 - 不会用错误图片替换缺失或被拒绝的视图；
 - 包含基于 Pillow 的归一化、manifest 校验、组合和检查脚本。
 
 原始照片不会直接进入组合器。请先使用可用的图像编辑能力生成干净的透明或白底 cutout，并在 manifest 中填写 `cleanup_status=approved`、`cleanup_method` 和 `refined_path`。具体要求见 [cutout-refinement.md](skills/equipment-six-view/references/cutout-refinement.md)。
+
+处理图片前，skill 会询问：
+
+> A. 无美化：仅抠图、去背景、修复边缘，保留产品原始状态；
+> B. 智能美化：在抠图基础上，清理屏幕膜气泡、倒影、灰尘、指纹和拍摄瑕疵，并适度统一观感。
+
+模式会记录在 manifest 的 `beautify_mode` 字段中，未选择模式不能进入组合。
 
 ### 目录结构
 
@@ -42,8 +51,9 @@ equipment-six-view/
 使用 Codex 的 skill 安装脚本，并指定仓库中的 skill 目录：
 
 ```powershell
-python <CODEX_HOME>\skills\.system\skill-installer\scripts\install-skill-from-github.py `
-  --url https://github.com/ike10969/equipment-six-view/tree/v1.2.0/skills/equipment-six-view
+$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME ".codex" }
+python (Join-Path $codexHome "skills\.system\skill-installer\scripts\install-skill-from-github.py") `
+  --url https://github.com/ike10969/equipment-six-view/tree/v1.3.0/skills/equipment-six-view
 ```
 
 ### 依赖安装
@@ -98,7 +108,9 @@ The skill keeps source mapping and composite layout separate. Users may upload i
 - Supports identical left and right sides through `same_as` mapping.
 - Supports custom composite layouts, including a centered front view with surrounding side views and the back view on the far right.
 - Uses a manifest to make source mapping, evidence status, rotation, and layout executable and reviewable.
+- Requires an explicit `none` or `smart` beautification choice before processing.
 - Requires every raw photo to pass cutout refinement and approval before composition.
+- In `smart` mode, performs conservative product retouching for screen-protector bubbles, reflections, dust, fingerprints, and capture defects.
 - Requires explicit permission before inferring a missing view.
 - Prevents rejected or missing views from being silently replaced by another view.
 - Includes Pillow-based normalization, manifest validation, composition, and inspection scripts.
@@ -124,8 +136,9 @@ equipment-six-view/
 Use the Codex skill installer with the skill directory inside this repository:
 
 ```powershell
-python <CODEX_HOME>\skills\.system\skill-installer\scripts\install-skill-from-github.py `
-  --url https://github.com/ike10969/equipment-six-view/tree/v1.2.0/skills/equipment-six-view
+$codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME ".codex" }
+python (Join-Path $codexHome "skills\.system\skill-installer\scripts\install-skill-from-github.py") `
+  --url https://github.com/ike10969/equipment-six-view/tree/v1.3.0/skills/equipment-six-view
 ```
 
 ## Requirements

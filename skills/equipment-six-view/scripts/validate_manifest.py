@@ -13,8 +13,11 @@ VIEWS = ("front", "back", "left", "right", "top", "bottom")
 EVIDENCE_STATUSES = {"direct", "partial", "inferred", "same_as", "excluded"}
 LABEL_MODES = {"none", "zh", "en", "bilingual"}
 TEMPLATES = {"front_center_surrounding_back_right"}
+BEAUTIFY_MODES = {"none", "smart"}
 CLEANUP_STATUSES = {"approved", "pending", "needs_review", "same_as"}
 CLEANUP_METHODS = {"ai_cutout", "manual_cutout", "already_clean", "same_as"}
+RETOUCH_STATUSES = {"approved", "not_requested", "pending", "needs_review", "same_as"}
+RETOUCH_METHODS = {"ai_retouch", "manual_retouch", "already_clean", "none", "same_as"}
 
 
 class ManifestError(ValueError):
@@ -106,6 +109,10 @@ def validate_manifest(
         errors.append("allow_inference must be true or false")
         allow_inference = False
 
+    beautify_mode = manifest.get("beautify_mode")
+    if beautify_mode not in BEAUTIFY_MODES:
+        errors.append("beautify_mode is required and must be none or smart")
+
     used_sources: dict[str, str] = {}
     for view in VIEWS:
         config = views.get(view)
@@ -131,6 +138,10 @@ def validate_manifest(
                 errors.append(f"{view}: same_as requires evidence_status=same_as")
             if config.get("cleanup_status") != "same_as":
                 errors.append(f"{view}: same_as requires cleanup_status=same_as")
+            if config.get("retouch_status") != "same_as":
+                errors.append(f"{view}: same_as requires retouch_status=same_as")
+            if config.get("retouch_method") != "same_as":
+                errors.append(f"{view}: same_as requires retouch_method=same_as")
             try:
                 resolved = _resolve_source_id(view, views)
                 if resolved in used_sources and used_sources[resolved] != view:
@@ -167,6 +178,24 @@ def validate_manifest(
             errors.append(f"{view}: refined_path must be a non-empty file path")
         if cleanup_method in {"ai_cutout", "manual_cutout"} and not refined_path:
             errors.append(f"{view}: refined_path is required after cutout refinement")
+        retouch_status = config.get("retouch_status")
+        if retouch_status not in RETOUCH_STATUSES:
+            errors.append(f"{view}: retouch_status must be one of: {', '.join(sorted(RETOUCH_STATUSES))}")
+        retouch_method = config.get("retouch_method")
+        if retouch_method not in RETOUCH_METHODS or retouch_method == "same_as":
+            errors.append(f"{view}: retouch_method is invalid")
+        elif beautify_mode == "none":
+            if retouch_status != "not_requested":
+                errors.append(f"{view}: none mode requires retouch_status=not_requested")
+            if retouch_method != "none":
+                errors.append(f"{view}: none mode requires retouch_method=none")
+        elif beautify_mode == "smart":
+            if retouch_status != "approved":
+                errors.append(f"{view}: smart mode requires retouch_status=approved")
+            if retouch_method not in {"ai_retouch", "manual_retouch", "already_clean"}:
+                errors.append(f"{view}: smart mode requires an approved retouch method")
+        if retouch_method in {"ai_retouch", "manual_retouch"} and not refined_path:
+            errors.append(f"{view}: refined_path is required after product retouching")
         rotation = config.get("rotation", 0)
         if rotation not in (0, 90, 180, 270):
             errors.append(f"{view}: rotation must be 0, 90, 180, or 270")
@@ -267,6 +296,7 @@ def validate_manifest(
         "sources": sources,
         "views": views,
         "slots": slots,
+        "beautify_mode": beautify_mode,
         "labels": labels,
         "canvas_size": canvas_size,
         "standalone_size": standalone_size,

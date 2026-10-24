@@ -27,6 +27,13 @@ Optional user metadata can be supplied as prose or JSON:
 
 Known dimensions and scale references may improve relative proportions. They do not turn the output into a measured engineering drawing.
 
+Before refinement, ask the user to choose one product-image mode for the whole set:
+
+- `none`: cutout and edge repair only; preserve the original visible product condition.
+- `smart`: cutout plus conservative cleanup of screen-protector bubbles, reflections, dust, fingerprints, and capture defects.
+
+Do not start refinement or composition until this choice is recorded as `beautify_mode` in the manifest.
+
 ## View names
 
 Use these exact filenames and semantic meanings:
@@ -42,7 +49,7 @@ Use these exact filenames and semantic meanings:
 
 The normalized view directory should contain one file for each name. PNG is preferred; JPEG and WebP are accepted as input.
 
-Raw photos must pass a separate cutout-refinement step before they become normalized views. Keep the original photo as evidence and record the cleaned image in the manifest as `refined_path`. The compositor must consume the refined image, not the raw photo.
+Raw photos must pass a cutout-refinement step before they become normalized views. In `smart` mode they must also pass product retouching. Keep the original photo as evidence and record the final selected-mode image in the manifest as `refined_path`. The compositor must consume the refined image, not the raw photo.
 
 ## Output layout
 
