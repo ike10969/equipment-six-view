@@ -33,7 +33,7 @@ Use these exact filenames and semantic meanings:
 
 | File | Meaning |
 | --- | --- |
-| `front.png` | Primary operating or presentation face |
+| `front.png` | User-designated front face; if the user does not define it, use the primary operating or presentation face |
 | `back.png` | Opposite face |
 | `left.png` | Device's left side when facing the front |
 | `right.png` | Device's right side when facing the front |
@@ -44,14 +44,16 @@ The normalized view directory should contain one file for each name. PNG is pref
 
 ## Output layout
 
-The default composite is a square white PNG with the following placement:
+The named `front_center_surrounding_back_right` template is a square white PNG with the following placement:
 
 - top view above the front view;
 - left and right views on either side of the front view;
 - back view to the far right;
 - bottom view below the front view.
 
-The composite is intentionally similar to the supplied reference layout while keeping each face separately reusable. The default canvas is 4096×4096 and each standalone view is 2048×2048.
+The template is intentionally similar to the supplied reference layout while keeping each face separately reusable. The default canvas is 4096×4096 and each standalone view is 2048×2048. A user-supplied layout reference or written arrangement takes precedence over this template.
+
+If fewer than six views are assigned, do not claim a complete six-view set unless the user explicitly enables inference. Use `excluded` for views the user says are unnecessary.
 
 ## Delivery note
 

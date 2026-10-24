@@ -12,12 +12,22 @@ from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageFilter
 VIEWS = ("front", "back", "left", "right", "top", "bottom")
 EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp")
 LABELS = {
-    "front": "正面 / FRONT",
-    "back": "背面 / BACK",
-    "left": "左侧面 / LEFT",
-    "right": "右侧面 / RIGHT",
-    "top": "俯视图 / TOP",
-    "bottom": "底视图 / BOTTOM",
+    "zh": {
+        "front": "正面",
+        "back": "背面",
+        "left": "左侧面",
+        "right": "右侧面",
+        "top": "俯视图",
+        "bottom": "底视图",
+    },
+    "en": {
+        "front": "FRONT",
+        "back": "BACK",
+        "left": "LEFT",
+        "right": "RIGHT",
+        "top": "TOP",
+        "bottom": "BOTTOM",
+    },
 }
 
 
@@ -68,17 +78,28 @@ def _paste_object(canvas: Image.Image, source: Image.Image, slot: tuple[int, int
     canvas.alpha_composite(fitted, (x, y))
 
 
-def _draw_label(canvas: Image.Image, view: str, slot: tuple[int, int, int, int], font: ImageFont.ImageFont) -> None:
+def _draw_label(
+    canvas: Image.Image,
+    view: str,
+    slot: tuple[int, int, int, int],
+    font: ImageFont.ImageFont,
+    mode: str,
+) -> None:
     left, top, width, height = slot
     draw = ImageDraw.Draw(canvas)
-    label = LABELS[view]
+    if mode == "zh":
+        label = LABELS["zh"][view]
+    elif mode == "en":
+        label = LABELS["en"][view]
+    else:
+        label = f"{LABELS['zh'][view]} / {LABELS['en'][view]}"
     box = draw.textbbox((0, 0), label, font=font)
     x = left + (width - (box[2] - box[0])) // 2
     y = top + height - 42
     draw.text((x, y), label, fill=(92, 92, 92, 255), font=font)
 
 
-def compose(input_dir: Path, output_dir: Path, size: int, labels: bool) -> None:
+def compose(input_dir: Path, output_dir: Path, size: int, label_mode: str) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     images: dict[str, Image.Image] = {}
     missing = []
@@ -122,8 +143,8 @@ def compose(input_dir: Path, output_dir: Path, size: int, labels: bool) -> None:
     font = _find_font(max(18, round(size * 0.014)))
     for view in VIEWS:
         _paste_object(composite, images[view], slots[view])
-        if labels:
-            _draw_label(composite, view, slots[view], font)
+        if label_mode != "none":
+            _draw_label(composite, view, slots[view], font, label_mode)
 
     composite.convert("RGB").save(output_dir / "six-view-composite.png", format="PNG", optimize=True)
 
@@ -134,6 +155,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--size", type=int, default=4096)
     parser.add_argument("--no-labels", action="store_true")
+    parser.add_argument("--labels", choices=("none", "zh", "en", "bilingual"), default="bilingual")
     return parser
 
 
@@ -146,7 +168,8 @@ def main() -> int:
         print(f"Input directory not found: {args.input_dir}", file=sys.stderr)
         return 2
     try:
-        compose(args.input_dir, args.output_dir, args.size, not args.no_labels)
+        label_mode = "none" if args.no_labels else args.labels
+        compose(args.input_dir, args.output_dir, args.size, label_mode)
     except (FileNotFoundError, OSError) as error:
         print(str(error), file=sys.stderr)
         return 1

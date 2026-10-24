@@ -13,8 +13,10 @@
 - 用户明确指定图号映射后，优先遵循用户映射；
 - 左右两侧相同时，支持通过 `same_as` 使用同一张已确认图片；
 - 支持自定义组合版式，例如正面图居中、上下左右视图环绕、背面图放在最右侧；
+- 通过 `manifest.json` 固化图像映射、排版、旋转和证据状态；
+- 缺失视图默认不会被推断，只有用户明确允许时才启用推断；
 - 不会用错误图片替换缺失或被拒绝的视图；
-- 包含基于 Pillow 的图片归一化、组合和检查脚本。
+- 包含基于 Pillow 的归一化、manifest 校验、组合和检查脚本。
 
 ### 目录结构
 
@@ -38,7 +40,7 @@ equipment-six-view/
 
 ```powershell
 python <CODEX_HOME>\skills\.system\skill-installer\scripts\install-skill-from-github.py `
-  --url https://github.com/ike10969/equipment-six-view/tree/v1.0.0/skills/equipment-six-view
+  --url https://github.com/ike10969/equipment-six-view/tree/v1.1.0/skills/equipment-six-view
 ```
 
 ### 依赖安装
@@ -53,11 +55,14 @@ python -m pip install -r requirements.txt
 
 ```powershell
 python scripts/normalize_views.py --input-dir <raw-views> --output-dir <normalized-views>
-python scripts/compose_six_views.py --input-dir <normalized-views> --output-dir <deliverables>
+python scripts/validate_manifest.py --manifest <manifest.json>
+python scripts/compose_from_manifest.py --manifest <manifest.json> --output-dir <deliverables>
 python scripts/inspect_result.py --input-dir <deliverables> --output-json <deliverables>\inspection.json
 ```
 
-当六个标准视图都存在并且固定版式符合用户要求时，使用 `compose_six_views.py`。如果用户提供了自定义参考排版，应使用基于映射清单的组合脚本，并严格保持用户指定的图像映射。
+如果只是完整六视图的旧式固定排版，可以使用 `compose_six_views.py`；只要用户指定了图号映射、排除视图、左右复用或自定义排版，就应使用 manifest 驱动的脚本。
+
+manifest 结构和 `front_center_surrounding_back_right` 排版模板见 [manifest-schema.md](skills/equipment-six-view/references/manifest-schema.md)。
 
 ### 使用示例
 
@@ -89,8 +94,10 @@ The skill keeps source mapping and composite layout separate. Users may upload i
 - Honors explicit user mappings before visual inference.
 - Supports identical left and right sides through `same_as` mapping.
 - Supports custom composite layouts, including a centered front view with surrounding side views and the back view on the far right.
+- Uses a manifest to make source mapping, evidence status, rotation, and layout executable and reviewable.
+- Requires explicit permission before inferring a missing view.
 - Prevents rejected or missing views from being silently replaced by another view.
-- Includes Pillow-based normalization, composition, and inspection scripts.
+- Includes Pillow-based normalization, manifest validation, composition, and inspection scripts.
 
 ## Package layout
 
@@ -114,7 +121,7 @@ Use the Codex skill installer with the skill directory inside this repository:
 
 ```powershell
 python <CODEX_HOME>\skills\.system\skill-installer\scripts\install-skill-from-github.py `
-  --url https://github.com/ike10969/equipment-six-view/tree/v1.0.0/skills/equipment-six-view
+  --url https://github.com/ike10969/equipment-six-view/tree/v1.1.0/skills/equipment-six-view
 ```
 
 ## Requirements
@@ -129,11 +136,12 @@ Run the scripts from `skills/equipment-six-view/` or pass absolute paths:
 
 ```powershell
 python scripts/normalize_views.py --input-dir <raw-views> --output-dir <normalized-views>
-python scripts/compose_six_views.py --input-dir <normalized-views> --output-dir <deliverables>
+python scripts/validate_manifest.py --manifest <manifest.json>
+python scripts/compose_from_manifest.py --manifest <manifest.json> --output-dir <deliverables>
 python scripts/inspect_result.py --input-dir <deliverables> --output-json <deliverables>\inspection.json
 ```
 
-`compose_six_views.py` is intended for a complete six-view set when its fixed layout matches the request. For a custom reference layout, use a manifest-driven composition script and preserve the user's explicit mapping.
+Use `compose_six_views.py` only for legacy fixed-layout work. For explicit mapping, excluded views, `same_as`, or custom reference layouts, use `validate_manifest.py` and `compose_from_manifest.py`.
 
 ## Usage example
 

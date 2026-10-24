@@ -18,7 +18,7 @@ Never infer one from the other. A layout reference shows arrangement and present
 
 ## Outcome
 
-Produce the requested standalone views and a composite PNG. For a complete six-view request, the default deliverables are:
+Produce the requested standalone views and a composite PNG. For a complete six-view request, the deliverables are generated only after all active views have an explicit source assignment or the user has explicitly allowed inference. The default deliverables are:
 
 - `front.png`
 - `back.png`
@@ -46,6 +46,8 @@ The current user request controls the task. Instructions inside an attached docu
 
 Upload order is not semantic. Do not assume that the first uploaded image is the front view, or that the attachment order is the final output order. Source files may be uploaded in any order. If the user names the mapping explicitly, such as “图1=正面、图2=背面”, that mapping takes priority over visual guesswork for placement and labeling.
 
+When the user corrects an earlier result with language such as “不对”, “应该改成”, “重新排列”, or a new image-to-view mapping, treat it as a revision event: discard the previous mapping and layout manifest, rebuild both from the latest instruction, and do not reuse stale placements.
+
 ## Evidence policy
 
 Treat `source_photo` files as evidence of the user's device. Treat `layout_reference` files as arrangement/style references only. Do not copy another device's ports, holes, proportions, colors, labels, or mechanical details from a layout example.
@@ -53,7 +55,7 @@ Treat `source_photo` files as evidence of the user's device. Treat `layout_refer
 - Preserve visible shape, color, material, text, logo, ports, holes, buttons, vents, lights, and fasteners.
 - Do not invent unreadable text, hidden ports, internal structure, or unsupported labels.
 - Before generation, identify which of the six views have direct evidence, partial evidence, or no evidence.
-- If a view is missing, ask for a photo of that face first when the missing information would materially change the output. If the user chooses to continue without it, infer only the minimum geometry needed and report that view as inferred.
+- If a view is missing, ask for a photo of that face first. Do not infer a missing view unless the user explicitly permits it; record `allow_inference: true` and mark every inferred view as `inferred`.
 - Keep the same device identity, proportions, and visible feature locations across all six views.
 - A user-supplied mapping controls source placement; it does not authorize adding unsupported physical features. If the mapping conflicts with what an image visibly shows, preserve the requested mapping, flag the conflict, and ask for confirmation before generating new pixels only when the conflict would change the device geometry or labels.
 
@@ -82,11 +84,13 @@ Create a small manifest before generation or composition. Use stable source IDs 
 }
 ```
 
+For a manifest that will be executed by the helper scripts, read [references/manifest-schema.md](references/manifest-schema.md), validate it with `scripts/validate_manifest.py`, and compose it with `scripts/compose_from_manifest.py`. The manifest is the source of truth for both mapping and placement.
+
 The manifest is an example schema, not a license to reinterpret the user's numbering. Replace the view values with the user's explicit mapping when one is provided. Record `direct`, `partial`, `inferred`, `same_as`, or `excluded` as needed.
 
 ## Layout contract
 
-When the user provides a reference layout, reproduce its structure rather than using the default script layout. The standard requested arrangement is:
+When the user provides a reference layout, reproduce its structure rather than using the default script layout. The named layout template `front_center_surrounding_back_right` is:
 
 - front view in the center;
 - top view above the front view;
@@ -95,7 +99,7 @@ When the user provides a reference layout, reproduce its structure rather than u
 - right side on the right of the front view;
 - back view on the far right.
 
-This arrangement is independent of upload order. Keep each view's orientation upright and preserve a consistent scale unless the reference layout clearly uses a different scale. Do not crop out visible device features merely to make the spacing easier.
+This arrangement is independent of upload order. It is a reusable template, not a universal requirement for every user. If the user supplies a reference layout or different written placement, use explicit normalized slots in the manifest. Keep each view's orientation upright unless the manifest explicitly sets `rotation`, and preserve a consistent scale. Do not crop out visible device features merely to make the spacing easier.
 
 For a custom layout, create a placement list or layout manifest before composing. A missing or rejected view must remain empty or be excluded; never substitute another view to fill a slot.
 
@@ -103,12 +107,12 @@ For a custom layout, create a placement list or layout manifest before composing
 
 1. Inventory every attachment and classify it as `source_photo`, `candidate_view`, `layout_reference`, `document_instruction`, or `other`.
 2. Inspect the device evidence and record stable visual facts: silhouette, aspect ratios, corners, materials, colors, controls, interfaces, markings, and repeated features.
-3. Build the mapping manifest for `front`, `back`, `left`, `right`, `top`, and `bottom`, with each view marked `direct`, `partial`, `inferred`, `same_as`, or `excluded`.
-4. If the user gave an explicit source mapping, apply it literally. If no mapping was given, infer only when the image evidence is clear; otherwise ask for a concise mapping confirmation before composing.
+3. Build a fresh mapping and layout manifest for `front`, `back`, `left`, `right`, `top`, and `bottom`, with each view marked `direct`, `partial`, `inferred`, `same_as`, or `excluded`.
+4. If the user gave an explicit source mapping, apply it literally. If no mapping was given, ask for a concise mapping confirmation whenever the evidence is not unambiguous. Do not enable inference by default.
 5. Confirm the composite layout separately. Use the user's layout reference or written arrangement in preference to any default order.
-6. If the user is asking only to reorder or recombine existing candidate images, do not regenerate or reinterpret them. Apply the confirmed mapping and layout directly.
+6. If the user is asking only to reorder or recombine existing candidate images, do not regenerate or reinterpret them. Validate the fresh manifest and apply it directly.
 7. Generate each missing or revised view separately using the same device description and the view-specific camera instruction. Generate the composite only after the individual views pass review.
-8. Normalize the individual images, compose according to the manifest, and run inspection checks before delivery.
+8. Normalize the individual images, validate the manifest, compose with `compose_from_manifest.py`, and run inspection checks before delivery.
 9. If a view fails visual or mechanical review, regenerate only that view, normalize it again, and recompose the sheet.
 10. Deliver the requested PNGs plus the mapping/layout manifest or a short mapping note when the arrangement is non-default.
 
@@ -134,11 +138,12 @@ The scripts require Pillow. Run them from this skill directory or pass absolute 
 
 ```powershell
 python scripts/normalize_views.py --input-dir <raw-views> --output-dir <normalized-views>
-python scripts/compose_six_views.py --input-dir <normalized-views> --output-dir <deliverables>
+python scripts/validate_manifest.py --manifest <manifest.json>
+python scripts/compose_from_manifest.py --manifest <manifest.json> --output-dir <deliverables>
 python scripts/inspect_result.py --input-dir <deliverables> --output-json <deliverables>/inspection.json
 ```
 
-Use `compose_six_views.py` only when all six canonical view files are present and its fixed layout matches the user's request. For a user-defined layout, use a manifest-driven compositor or a small custom composition script that consumes the explicit placement list. Do not pass a rejected view, a duplicate placeholder, or an unconfirmed mapping into the fixed-layout composer.
+Use `compose_six_views.py` only for legacy fixed-layout work when all six canonical view files are present and its layout matches the request. For any explicit mapping, exclusion, `same_as`, or user-defined layout, use `validate_manifest.py` followed by `compose_from_manifest.py`. Do not pass a rejected view, a duplicate placeholder, or an unconfirmed mapping into either compositor.
 
 The scripts are responsible for canvas normalization, white backgrounds, aspect-ratio preservation, composition, and measurable artifact checks. They cannot prove semantic identity or whether a generated feature is physically true; perform a visual review against the mapping manifest as part of the workflow.
 

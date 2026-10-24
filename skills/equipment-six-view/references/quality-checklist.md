@@ -4,6 +4,9 @@ Run both semantic review and script checks before delivery.
 
 ## Semantic review
 
+- The latest user instruction produced a fresh manifest; no stale mapping or layout was reused after a correction.
+- The manifest validates with no duplicate source assignment unless the second view uses `same_as`.
+- Every active view has evidence or explicit inference permission; excluded views are not silently filled.
 - All six faces depict the same device.
 - Front/back orientation is not swapped.
 - Left/right are defined from the viewer-facing front.
@@ -21,10 +24,12 @@ Run both semantic review and script checks before delivery.
 - Object scale is visually consistent across the six standalone views.
 - Composite has generous, even spacing and no overlapping panels.
 - Labels, when enabled, match the view filenames.
+- The chosen layout template or normalized slots match the user's written or visual reference.
+- View occupancy is consistent within the intended face orientation; wide top/bottom views are not forced into a misleading scale.
 
 ## Script checks
 
-`inspect_result.py` checks file presence, readable PNGs, minimum dimensions, near-white borders, canvas contact, excessive blankness, and composite size. A passing script check does not establish physical truth or semantic identity; a visual review remains mandatory.
+`validate_manifest.py` checks view mapping, `same_as`, inference permission, source files, layout bounds, and slot overlap. `inspect_result.py` checks file presence, readable PNGs, minimum dimensions, near-white borders, canvas contact, excessive blankness, and composite size. Passing script checks do not establish physical truth or semantic identity; a visual review remains mandatory.
 
 ## Regeneration rule
 
