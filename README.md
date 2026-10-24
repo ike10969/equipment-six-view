@@ -23,7 +23,7 @@
 
 原始照片不会直接进入组合器。请先使用可用的图像编辑能力生成干净的透明或白底 cutout，并在 manifest 中填写 `cleanup_status=approved`、`cleanup_method` 和 `refined_path`。具体要求见 [cutout-refinement.md](skills/equipment-six-view/references/cutout-refinement.md)。
 
-处理图片前，skill 会询问：
+收到新图片后，skill 的第一步必须先询问：
 
 > A. 无美化：仅抠图、去背景、修复边缘，保留产品原始状态；
 > B. 智能美化：在抠图基础上，清理屏幕膜气泡、倒影、灰尘、指纹和拍摄瑕疵，并适度统一观感。
@@ -53,7 +53,7 @@ equipment-six-view/
 ```powershell
 $codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME ".codex" }
 python (Join-Path $codexHome "skills\.system\skill-installer\scripts\install-skill-from-github.py") `
-  --url https://github.com/ike10969/equipment-six-view/tree/v1.3.0/skills/equipment-six-view
+  --url https://github.com/ike10969/equipment-six-view/tree/v1.3.1/skills/equipment-six-view
 ```
 
 ### 依赖安装
@@ -138,7 +138,7 @@ Use the Codex skill installer with the skill directory inside this repository:
 ```powershell
 $codexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $HOME ".codex" }
 python (Join-Path $codexHome "skills\.system\skill-installer\scripts\install-skill-from-github.py") `
-  --url https://github.com/ike10969/equipment-six-view/tree/v1.3.0/skills/equipment-six-view
+  --url https://github.com/ike10969/equipment-six-view/tree/v1.3.1/skills/equipment-six-view
 ```
 
 ## Requirements

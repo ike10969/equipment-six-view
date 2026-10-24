@@ -9,6 +9,16 @@ metadata:
 
 Use this skill when the user asks for equipment six views, orthographic product views, a product-view composite, or completion of missing product-material images from photos.
 
+## Mandatory first-response gate
+
+Before any image editing, cutout, generation, normalization, composition, or delivery, check whether the current user request explicitly selected a beautification mode. If it did not, stop and ask only this question first:
+
+> 请选择产品图处理方式：
+> A. 无美化：仅抠图、去背景、修复边缘，保留产品原始状态；
+> B. 智能美化：在抠图基础上，清理屏幕膜气泡、倒影、灰尘、指纹和拍摄瑕疵，并适度统一观感。
+
+Do not reuse a previous turn's mode, an old manifest, or an earlier approved cutout as the answer for a new image batch. Continue only after the user chooses A/B or explicitly says an equivalent phrase such as “只抠图” or “智能美化”.
+
 The skill must keep two things separate:
 
 1. **View identity** — which source image represents front, back, left, right, top, or bottom.
@@ -59,13 +69,7 @@ Treat `source_photo` files as evidence of the user's device. Treat `layout_refer
 - Keep the same device identity, proportions, and visible feature locations across all six views.
 - A user-supplied mapping controls source placement; it does not authorize adding unsupported physical features. If the mapping conflicts with what an image visibly shows, preserve the requested mapping, flag the conflict, and ask for confirmation before generating new pixels only when the conflict would change the device geometry or labels.
 
-## Beautification choice gate
-
-After attachment inventory and before image refinement, ask the user to choose one mode for the whole device set. Do not silently choose a mode and do not ask separately for every view:
-
-> 请选择产品图处理方式：
-> A. 无美化：仅抠图、去背景、修复边缘，保留产品原始状态；
-> B. 智能美化：在抠图基础上，清理屏幕膜气泡、倒影、灰尘、指纹和拍摄瑕疵，并适度统一观感。
+## Beautification mode semantics
 
 Record the answer in the manifest as `beautify_mode: "none"` or `beautify_mode: "smart"`.
 
@@ -154,7 +158,7 @@ For a custom layout, create a placement list or layout manifest before composing
 9. Generate each missing or revised view separately using the same device description and the view-specific camera instruction. Generate the composite only after the individual views and selected refinement mode pass review.
 10. Normalize the approved final refined images, validate the manifest, compose with `compose_from_manifest.py`, and run inspection checks before delivery.
 11. If a view fails visual, cutout, retouching, or mechanical review, regenerate or refine only that view, then recompose the sheet.
-11. Deliver the requested PNGs plus the mapping/layout manifest or a short mapping note when the arrangement is non-default.
+12. Deliver the requested PNGs plus the mapping/layout manifest or a short mapping note when the arrangement is non-default.
 
 ## Generation guidance
 

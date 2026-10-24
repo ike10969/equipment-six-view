@@ -1,6 +1,6 @@
 interface:
   display_name: "Equipment Six-View Composer"
   short_description: "Map and compose consistent equipment six-view references"
-  default_prompt: "Use $equipment-six-view to map these device images explicitly, confirm the requested layout, and create a consistent six-view reference sheet."
+  default_prompt: "Use $equipment-six-view to first ask whether I want none or smart beautification, then map these device images explicitly, confirm the layout, and create a consistent six-view reference sheet."
 policy:
   allow_implicit_invocation: true
