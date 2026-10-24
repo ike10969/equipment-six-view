@@ -19,7 +19,9 @@ from compose_from_manifest import compose  # noqa: E402
 class ManifestWorkflowTests(unittest.TestCase):
     def _make_inputs(self, root: Path) -> Path:
         raw = root / "raw"
+        refined = root / "refined"
         raw.mkdir()
+        refined.mkdir()
         for name, color in {
             "front": (30, 30, 30),
             "back": (50, 50, 50),
@@ -27,10 +29,14 @@ class ManifestWorkflowTests(unittest.TestCase):
             "top": (90, 90, 90),
             "bottom": (110, 110, 110),
         }.items():
-            image = Image.new("RGB", (320, 180), "white")
+            image = Image.new("RGB", (320, 180), (210, 40, 40))
             draw = ImageDraw.Draw(image)
             draw.rectangle((40, 30, 280, 150), fill=color)
             image.save(raw / f"{name}.png")
+            clean = Image.new("RGB", (320, 180), "white")
+            clean_draw = ImageDraw.Draw(clean)
+            clean_draw.rectangle((40, 30, 280, 150), fill=color)
+            clean.save(refined / f"{name}.png")
         return raw
 
     def test_same_as_manifest_composes_named_layout(self) -> None:
@@ -51,12 +57,12 @@ class ManifestWorkflowTests(unittest.TestCase):
                             "bottom": "raw/bottom.png",
                         },
                         "views": {
-                            "front": {"source_id": "front", "evidence_status": "direct"},
-                            "back": {"source_id": "back", "evidence_status": "direct"},
-                            "left": {"source_id": "left", "evidence_status": "direct"},
-                            "right": {"same_as": "left", "evidence_status": "same_as"},
-                            "top": {"source_id": "top", "evidence_status": "direct"},
-                            "bottom": {"source_id": "bottom", "evidence_status": "direct"},
+                            "front": {"source_id": "front", "evidence_status": "direct", "cleanup_status": "approved", "cleanup_method": "ai_cutout", "refined_path": "refined/front.png"},
+                            "back": {"source_id": "back", "evidence_status": "direct", "cleanup_status": "approved", "cleanup_method": "ai_cutout", "refined_path": "refined/back.png"},
+                            "left": {"source_id": "left", "evidence_status": "direct", "cleanup_status": "approved", "cleanup_method": "ai_cutout", "refined_path": "refined/left.png"},
+                            "right": {"same_as": "left", "evidence_status": "same_as", "cleanup_status": "same_as"},
+                            "top": {"source_id": "top", "evidence_status": "direct", "cleanup_status": "approved", "cleanup_method": "ai_cutout", "refined_path": "refined/top.png"},
+                            "bottom": {"source_id": "bottom", "evidence_status": "direct", "cleanup_status": "approved", "cleanup_method": "ai_cutout", "refined_path": "refined/bottom.png"},
                         },
                         "layout": {"template": "front_center_surrounding_back_right"},
                         "labels": "none",
@@ -69,6 +75,8 @@ class ManifestWorkflowTests(unittest.TestCase):
             compose(manifest_path, output)
             self.assertTrue((output / "six-view-composite.png").is_file())
             self.assertTrue((output / "right.png").is_file())
+            with Image.open(output / "front.png") as image:
+                self.assertEqual(image.getpixel((0, 0)), (255, 255, 255))
 
     def test_duplicate_source_requires_same_as(self) -> None:
         manifest = {
@@ -89,6 +97,28 @@ class ManifestWorkflowTests(unittest.TestCase):
             "sources": {"one": "one.png"},
             "views": {
                 "front": {"source_id": "one", "evidence_status": "inferred"},
+                **{
+                    view: {"evidence_status": "excluded"}
+                    for view in ("back", "left", "right", "top", "bottom")
+                },
+            },
+            "layout": {"template": "front_center_surrounding_back_right"},
+        }
+        with self.assertRaises(ManifestError):
+            validate_manifest(manifest, require_files=False)
+
+    def test_pending_cutout_is_rejected(self) -> None:
+        manifest = {
+            "schema_version": 1,
+            "sources": {"one": "one.png"},
+            "views": {
+                "front": {
+                    "source_id": "one",
+                    "evidence_status": "direct",
+                    "cleanup_status": "pending",
+                    "cleanup_method": "ai_cutout",
+                    "refined_path": "refined/front.png",
+                },
                 **{
                     view: {"evidence_status": "excluded"}
                     for view in ("back", "left", "right", "top", "bottom")

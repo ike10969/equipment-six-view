@@ -1,6 +1,6 @@
 {
   "name": "equipment-six-view",
-  "version": "1.1.0",
-  "description": "Create consistent equipment six-view references with executable source mapping, evidence gates, and user-defined layouts.",
+  "version": "1.2.0",
+  "description": "Create consistent equipment six-view references with mandatory cutout refinement, executable source mapping, evidence gates, and user-defined layouts.",
   "skills": "./skills/"
 }

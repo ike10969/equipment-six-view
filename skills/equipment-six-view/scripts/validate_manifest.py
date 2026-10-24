@@ -13,6 +13,8 @@ VIEWS = ("front", "back", "left", "right", "top", "bottom")
 EVIDENCE_STATUSES = {"direct", "partial", "inferred", "same_as", "excluded"}
 LABEL_MODES = {"none", "zh", "en", "bilingual"}
 TEMPLATES = {"front_center_surrounding_back_right"}
+CLEANUP_STATUSES = {"approved", "pending", "needs_review", "same_as"}
+CLEANUP_METHODS = {"ai_cutout", "manual_cutout", "already_clean", "same_as"}
 
 
 class ManifestError(ValueError):
@@ -127,6 +129,8 @@ def validate_manifest(
                 errors.append(f"{view}: use either same_as or source_id, not both")
             if status != "same_as":
                 errors.append(f"{view}: same_as requires evidence_status=same_as")
+            if config.get("cleanup_status") != "same_as":
+                errors.append(f"{view}: same_as requires cleanup_status=same_as")
             try:
                 resolved = _resolve_source_id(view, views)
                 if resolved in used_sources and used_sources[resolved] != view:
@@ -150,6 +154,19 @@ def validate_manifest(
             )
         else:
             used_sources[source_id] = view
+        cleanup_status = config.get("cleanup_status")
+        if cleanup_status not in CLEANUP_STATUSES:
+            errors.append(f"{view}: cleanup_status must be one of: {', '.join(sorted(CLEANUP_STATUSES))}")
+        elif cleanup_status != "approved":
+            errors.append(f"{view}: cutout refinement must be approved before composition")
+        cleanup_method = config.get("cleanup_method")
+        if cleanup_method not in CLEANUP_METHODS or cleanup_method == "same_as":
+            errors.append(f"{view}: cleanup_method must be ai_cutout, manual_cutout, or already_clean")
+        refined_path = config.get("refined_path")
+        if refined_path is not None and (not isinstance(refined_path, str) or not refined_path):
+            errors.append(f"{view}: refined_path must be a non-empty file path")
+        if cleanup_method in {"ai_cutout", "manual_cutout"} and not refined_path:
+            errors.append(f"{view}: refined_path is required after cutout refinement")
         rotation = config.get("rotation", 0)
         if rotation not in (0, 90, 180, 270):
             errors.append(f"{view}: rotation must be 0, 90, 180, or 270")
@@ -228,6 +245,20 @@ def validate_manifest(
                 path = base_dir / path
             if not path.is_file():
                 errors.append(f"source file not found for {source_id}: {path}")
+        for view in VIEWS:
+            config = views.get(view)
+            if not isinstance(config, dict) or config.get("evidence_status", "direct") == "excluded":
+                continue
+            if config.get("same_as") is not None:
+                continue
+            refined_path = config.get("refined_path")
+            if not isinstance(refined_path, str) or not refined_path:
+                continue
+            path = Path(refined_path)
+            if not path.is_absolute():
+                path = base_dir / path
+            if not path.is_file():
+                errors.append(f"refined file not found for {view}: {path}")
 
     if errors:
         raise ManifestError("\n".join(f"- {error}" for error in errors))

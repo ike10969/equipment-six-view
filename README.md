@@ -14,9 +14,12 @@
 - 左右两侧相同时，支持通过 `same_as` 使用同一张已确认图片；
 - 支持自定义组合版式，例如正面图居中、上下左右视图环绕、背面图放在最右侧；
 - 通过 `manifest.json` 固化图像映射、排版、旋转和证据状态；
+- 强制执行抠图精修：去除手、房间、地面和杂物，修复边缘后才能进入组合；
 - 缺失视图默认不会被推断，只有用户明确允许时才启用推断；
 - 不会用错误图片替换缺失或被拒绝的视图；
 - 包含基于 Pillow 的归一化、manifest 校验、组合和检查脚本。
+
+原始照片不会直接进入组合器。请先使用可用的图像编辑能力生成干净的透明或白底 cutout，并在 manifest 中填写 `cleanup_status=approved`、`cleanup_method` 和 `refined_path`。具体要求见 [cutout-refinement.md](skills/equipment-six-view/references/cutout-refinement.md)。
 
 ### 目录结构
 
@@ -40,7 +43,7 @@ equipment-six-view/
 
 ```powershell
 python <CODEX_HOME>\skills\.system\skill-installer\scripts\install-skill-from-github.py `
-  --url https://github.com/ike10969/equipment-six-view/tree/v1.1.0/skills/equipment-six-view
+  --url https://github.com/ike10969/equipment-six-view/tree/v1.2.0/skills/equipment-six-view
 ```
 
 ### 依赖安装
@@ -95,6 +98,7 @@ The skill keeps source mapping and composite layout separate. Users may upload i
 - Supports identical left and right sides through `same_as` mapping.
 - Supports custom composite layouts, including a centered front view with surrounding side views and the back view on the far right.
 - Uses a manifest to make source mapping, evidence status, rotation, and layout executable and reviewable.
+- Requires every raw photo to pass cutout refinement and approval before composition.
 - Requires explicit permission before inferring a missing view.
 - Prevents rejected or missing views from being silently replaced by another view.
 - Includes Pillow-based normalization, manifest validation, composition, and inspection scripts.
@@ -121,7 +125,7 @@ Use the Codex skill installer with the skill directory inside this repository:
 
 ```powershell
 python <CODEX_HOME>\skills\.system\skill-installer\scripts\install-skill-from-github.py `
-  --url https://github.com/ike10969/equipment-six-view/tree/v1.1.0/skills/equipment-six-view
+  --url https://github.com/ike10969/equipment-six-view/tree/v1.2.0/skills/equipment-six-view
 ```
 
 ## Requirements

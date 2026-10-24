@@ -55,6 +55,15 @@ def _source_path(manifest_path: Path, path_value: str) -> Path:
     return path if path.is_absolute() else manifest_path.parent / path
 
 
+def _resolved_view_name(view: str, views: dict, seen: set[str] | None = None) -> str:
+    seen = seen or set()
+    if view in seen:
+        raise ManifestError(f"same_as cycle detected at view: {view}")
+    seen.add(view)
+    target = views[view].get("same_as")
+    return _resolved_view_name(target, views, seen) if target else view
+
+
 def _pixel_slot(slot: dict[str, float], size: int) -> tuple[int, int, int, int]:
     return (
         round(slot["x"] * size),
@@ -66,7 +75,10 @@ def _pixel_slot(slot: dict[str, float], size: int) -> tuple[int, int, int, int]:
 
 def _load_view(manifest_path: Path, normalized: dict, view: str) -> Image.Image:
     source_id = _resolve_source_id(view, normalized["views"])
-    source = _source_path(manifest_path, normalized["sources"][source_id])
+    source_view = _resolved_view_name(view, normalized["views"])
+    source_config = normalized["views"][source_view]
+    source_value = source_config.get("refined_path") or normalized["sources"][source_id]
+    source = _source_path(manifest_path, source_value)
     with Image.open(source) as image:
         result = ImageOps.exif_transpose(image).convert("RGBA")
     rotation = normalized["views"][view].get("rotation", 0)

@@ -42,6 +42,8 @@ Use these exact filenames and semantic meanings:
 
 The normalized view directory should contain one file for each name. PNG is preferred; JPEG and WebP are accepted as input.
 
+Raw photos must pass a separate cutout-refinement step before they become normalized views. Keep the original photo as evidence and record the cleaned image in the manifest as `refined_path`. The compositor must consume the refined image, not the raw photo.
+
 ## Output layout
 
 The named `front_center_surrounding_back_right` template is a square white PNG with the following placement:

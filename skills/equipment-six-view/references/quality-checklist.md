@@ -7,6 +7,9 @@ Run both semantic review and script checks before delivery.
 - The latest user instruction produced a fresh manifest; no stale mapping or layout was reused after a correction.
 - The manifest validates with no duplicate source assignment unless the second view uses `same_as`.
 - Every active view has evidence or explicit inference permission; excluded views are not silently filled.
+- Every active view has `cleanup_status=approved` before composition; no raw photo is used as the final view.
+- Each refined view has a transparent or clean white background, with no hands, room, floor, stand, cable, or unwanted shadow remaining.
+- Silhouette edges have no halos, white wedges, jagged cutout borders, holes, or transparent fringe.
 - All six faces depict the same device.
 - Front/back orientation is not swapped.
 - Left/right are defined from the viewer-facing front.
@@ -26,6 +29,7 @@ Run both semantic review and script checks before delivery.
 - Labels, when enabled, match the view filenames.
 - The chosen layout template or normalized slots match the user's written or visual reference.
 - View occupancy is consistent within the intended face orientation; wide top/bottom views are not forced into a misleading scale.
+- Refined cutouts preserve real device features and do not reconstruct areas hidden by an occluding hand unless explicitly marked inferred.
 
 ## Script checks
 
